@@ -15,6 +15,7 @@ for (j in 1:10000){
   max.streak <- 0
   # He takes 100 threes each session. Each session, his shooting % varies each day.
   pct <- rnorm(1,mean=.44,sd=.17) # His expected percentage each day. The mean is his season avg.
+  if (pct >= 1) {pct <- 0.99} # Can't be perfect.
   for (i in 1:100){
     make <- runif(1,0,1) # Does he hit the shot? (If this is less than pct, it's a make.)
     streak <- ifelse(make<=pct,streak+1,0)
@@ -28,15 +29,17 @@ max(unlist(all.streaks))
 length(all.streaks[all.streaks>=77])
 
 # This finds he hits at least 77 in a row 5 out of every 10,000 sessions. So not often, but occasionally.
+# New version (with cap on possible shooting percentage) finds 10 streaks out of 10,000.
 
-# But maybe he's a lot better in practice. Let's say (totaly arbitrarily) his average then is 75%.
+# But maybe he's a lot better in practice. Let's say (totaly arbitrarily) his average then is 55%.
 all.streaks <- as.list(1)
 # 10,000 simulations
 for (j in 1:10000){
   streak <- 0
   max.streak <- 0
   # He takes 100 threes each session. Each session, his shooting % varies each day.
-  pct <- rnorm(1,mean=.75,sd=.17) # His expected percentage each day. The mean is 0.75.
+  pct <- rnorm(1,mean=.55,sd=.17) # His expected percentage each day. The mean is 0.75.
+  if (pct >= 1) {pct <- 0.99}
   for (i in 1:100){
     make <- runif(1,0,1) # Does he hit the shot? (If this is less than pct, it's a make.)
     streak <- ifelse(make<=pct,streak+1,0)
@@ -50,3 +53,35 @@ max(unlist(all.streaks))
 length(all.streaks[all.streaks>=77])
 
 # This time he hits 77 in a row 832 out of 10,000 times. Quite a bit more common.
+# New version (with cap on possible shooting percentage) finds 32 streaks out of 10,000.
+
+
+# Reader Ryan notes that Curry might be unlikely to stop shooting if he's in the middle of a long streak.
+# So instead we'll treat a full season of practice as one long session (assuming he takes his breaks after misses).
+# Ryan estimates Curry takes around 210,000 shots per year, based on this interview: http://espn.go.com/nba/story/_/page/maginterviewcurry/golden-state-warriors-stephen-curry-says-second-most-clutch-shooter-ever-espn-magazine
+# I'm still resetting his shooting percentage every 100 shots. That's almost completely arbitrary.
+
+all.streaks <- as.list(1)
+streak <- 0
+max.streak <- 0
+count <- 0
+# 10,000 simulations
+for (j in 1:2100){
+  # He takes 100 threes each session. Each session, his shooting % varies each day.
+  pct <- rnorm(1,mean=.44,sd=.17) # His expected percentage each day. The mean is 0.75.
+  if (pct >= 1) {pct <- 0.99}
+  for (i in 1:100){
+    make <- runif(1,0,1) # Does he hit the shot? (If this is less than pct, it's a make.)
+    if (make<=pct) {streak <- streak+1}
+    else {count <- count+1; all.streaks[count] <- streak; streak <- 0}
+    streak <- ifelse(make<=pct,streak+1,0)
+    #      print(c(i,pct,make,streak))
+    max.streak <- ifelse(streak>max.streak,streak,max.streak)
+  }
+  if ((j/100)%%1 == 0) {print(j)}
+}
+max(unlist(all.streaks))
+length(all.streaks[all.streaks>=77])
+
+# This finds about 1 streak of 77+ per season, with a make streak of around 100 shots. 
+# So by this (very, very simple) model, you'd expect Curry to do this around once a season.
